@@ -1,0 +1,146 @@
+#テンプレート画像を作成する
+'''
+Created on 2022/03/12
+
+@author: K.ABE
+'''
+from matplotlib import pyplot as plt
+import numpy as np
+import PIL
+import pydicom
+import glob
+
+#テンプレート画像と入力画像との類似度を計算
+def zncc(template_array, cripped_array):
+    #int型をfloat型に変換する
+    tmp_ary_float=template_array.astype(np.float32)
+    cp_ary_float=cripped_array.astype(np.float32)
+
+    #分子の計算
+    zncc_array_1=(tmp_ary_float - np.average(tmp_ary_float))
+    zncc_array_2=(cp_ary_float-np.average(cp_ary_float))
+    zncc_array_12=np.sum((zncc_array_1)* (zncc_array_2))
+
+    #分母の計算
+    zncc_array_3 =np.sum((tmp_ary_float - np.average(tmp_ary_float))*(tmp_ary_float - np.average(tmp_ary_float)))#分母
+    zncc_array_4=np.sum((cp_ary_float-np.average(cp_ary_float))*(cp_ary_float-np.average(cp_ary_float)))
+    zncc_array_3=np.sqrt(zncc_array_3)
+    zncc_array_4=np.sqrt(zncc_array_4)
+    zncc_array_34= (zncc_array_3)*( zncc_array_4)
+    zncc=(zncc_array_12) /(zncc_array_34)
+    return zncc
+
+#マーカの位置を計算
+def templateMatching(template_array, input_array, sa):
+    #サーチエリア内の画像を切り抜く
+    sa_array=input_array[sa[1]:sa[1]+sa[3], sa[0]: sa[0]+sa[2]]
+    h_c, w_c=sa_array.shape
+    h_t, w_t=template_array.shape
+    val_list=[]#テンプレートマッチングのスコアを保存するリスト
+    for file in glob_path  :
+        #ファイルパス名を取得
+        dcms=glob.glob()
+
+        #サーチエリアの中をラスタースキャンする
+        for y in range(h_c-h_t):
+            for x in range(w_c-w_t):
+                cripped_array=sa_array[y:y+h_t, x:x+w_t]
+                val=zncc(template_array, cripped_array)
+                val_list.append(val)
+
+        #numpyのほうが処理が簡単なので、いったんndarrayに変換
+        val_array=np.array(val_list)
+        max_index = np.argmax(val_array)
+        max_val = np.amax(val_array)
+        print("max_index, max_val = ", max_index, max_val)
+
+        posX=max_index%(w_c-w_t)
+        posY=max_index//(w_c-w_t)
+        posX, posY = templateMatching(template_array, tracking_image_array, sa)
+        return posX, posY
+
+#dicom画像を読む関数。
+def load_dcm_image(path=None):
+    dcm = pydicom.dcmread(path , force=True)
+    dcm.file_meta.TransferSyntaxUID = pydicom.uid.ImplicitVRLittleEndian
+    return dcm.pixel_array
+
+#dicom画像を保存する関数
+#output_array：出力する画像のndarray
+#ref_dcm：参照とするdcm
+#output_path：出力するpath
+def save_multi_dcm_image(output_array, ref_dcm, output_path):
+    ref_dcm.Rows, ref_dcm.Columns, shots_num  = output_array.shape
+    for i in range(shots_num):
+        ref_dcm.PixelData = output_array[:,:,i].tobytes()
+        ref_dcm.save_as(output_path + str(i).zfill(4) + ".dcm")
+        print("test " + str(i).zfill(4) + " Template Sucessfully Created!")
+    return
+
+if __name__ == '__main__':
+
+    #テンプレートを切り出す元の画像のpath
+    #ファイルパス名を取得
+    dcms=glob.glob("C:/Users/K.ABE/Desktop/20190911_Abe_dcm/CoreView_12_FPD_CP1/*.dcm")
+
+    #画像上で切り出したいテンプレートの中心位置[pixel]
+    template_posX = 532
+    template_posY = 353
+    posX=55
+    posY=55
+
+    #テンプレート画像のサイズ[pixel](偶数のみ)＃テンプレートの幅
+    template_size = 30
+    dcm_array=load_dcm_image(dcms[0])
+
+    # d_arrayに(x,y,撮影枚数)の3次元データを詰める準備
+    d_array = np.zeros((dcm_array.shape[0], dcm_array.shape[1], len(dcms)), dtype=dcm_array.dtype)
+
+    #dicom画像の読み込み
+    for dcm in dcms:
+        d_array[:,:,dcms.index(dcm)]=load_dcm_image(dcm)
+
+        print("dcm_array.shape = ", d_array.shape, dcm) #, dcmで表示
+
+    #d_arrayの一枚目だけ確認
+    plt.imshow(d_array[:,:,0], cmap='gray')
+    plt.show()
+
+    #テンプレート画像を切り出す。
+    template_array = d_array[int(template_posY-template_size/2):int(template_posY+template_size/2),
+                                int(template_posX-template_size/2):int(template_posX+template_size/2)
+                                ,:]
+    #テンプレート画像をdcm形式で保存する。
+    output_path="C:/Users/K.ABE/Desktop/template_image.dcm/template_image0000.dcm"
+    ref_path = dcms[0]
+    ref_dcm=dcm = pydicom.dcmread(ref_path , force=True)#reference用のdicom画像を読み込む。
+    glob_path="C:/Users/K.ABE/Desktop/20200911_Abe_dcm/CoreView_12_FPD_CP1/*.dcm"
+
+    #追跡対象の画像のpath
+    tracking_image_list="C:/Users/K.ABE/Desktop/20200911_Abe_dcm/CoreView_12_FPD_CP1/*.dcm"
+    ls = glob.glob(tracking_image_list)
+    for i in range(len(ls)):
+        print("ls[" + str(i) +"]=" +ls[i])
+
+    sa_posX=505#左上のx
+    sa_posY=330#左上のy
+    sa_lengthX=50
+    sa_lengthY=50
+    sa=[sa_posX, sa_posY, sa_lengthX, sa_lengthY]
+
+    for file in range(len(glob_path)):
+        for path in ls:
+            #画像の読み込み
+            tracking_image_array=load_dcm_image(path)
+            template_array = d_array[int(posY-template_size/2):int(posY+template_size/2),int(posX-template_size/2):int(posX+template_size/2) ,:]
+            template_array = dcm_array[int(template_posY-template_size/2):int(template_posY+template_size/2),
+                                int(template_posX-template_size/2):int(template_posX+template_size/2)]
+    print("template_array.shape=", template_array.shape)
+
+#SAを動かすかどうか
+MOVE_SA=True
+if MOVE_SA:
+
+    sa[0]=int(sa[0]+posX-sa[2]/2+w_t/2)
+    sa[1]=int(sa[1]+posY-sa[3]/2+h_t/2)
+pass
