@@ -1,0 +1,63 @@
+#マーカ画像と背景画像を合成する
+'''
+Created on 2022/3/12
+@author: K.ABE
+'''
+
+import cv2
+import numpy as np
+import pydicom
+import glob
+import matplotlib.pyplot as plt
+import random
+from cupy.creation.from_data import asarray
+
+def load_dcm_image(path=None):
+    dcm = pydicom.dcmread(path , force=True)#dicom画像を読み込む。
+    dcm.file_meta.TransferSyntaxUID = pydicom.uid.ImplicitVRLittleEndian
+    return dcm.pixel_array
+
+def save_dcm_image(output_array, ref_dcm, output_path):
+    ref_dcm.PixelData = output_array.tobytes()
+    ref_dcm.Rows, ref_dcm.Columns = output_array.shape
+    ref_dcm.save_as(output_path)
+    return
+
+if __name__ == '__main__':
+    #読み込む画像
+    image_files_pos=glob.glob('C:/Users/K.ABE/Documents/Visicoil/training_data_1027/100pixel/scaling(clear_modelA)/*.dcm')
+    image_files_neg = glob.glob('C:/Users/K.ABE/Documents/dataset_negative/合成に使う背景画像/fromRandomCoreView_12_FPD_CP1andCP2(50000)/*.dcm')
+    ref_path='C:/Users/K.ABE/Documents/マーカ画像取得実験/20190911_Abe_dcm/CoreView_12_FPD_CP1/0000.dcm'
+
+    sa_lengthX=32
+    sa_lengthY=6
+    #切り取り領域（長方形）の中心
+    posX=sa_lengthX/2
+    posY=sa_lengthY/2
+
+    for i in range(len(image_files_neg)):
+        ref_dcm=pydicom.dcmread(ref_path, force=True)
+        # 入力画像の読み込み
+        mk_img = load_dcm_image(image_files_pos[i])
+        #背景画像の読み込み
+        bg_img = load_dcm_image(image_files_neg[2])
+
+        #背景（ファントム）の平均をとる範囲を設定
+        crip_array = mk_img[int(posY-sa_lengthY/2):int(posY+sa_lengthY/2),int(posX-sa_lengthX/2):int(posX+sa_lengthX/2)]
+        #平均を取る
+        background_pixelvalue=np.average(crip_array)
+        alpha=(random.uniform(0.5,5.0))
+
+        bg_img=np.asarray(bg_img, dtype=np.float64)
+        mk_img=np.asarray(mk_img, dtype=np.float64)
+
+        #合成画像を作成
+        fusion_img=background_pixelvalue*np.exp(alpha*np.log(mk_img/background_pixelvalue)+np.log(bg_img/background_pixelvalue))
+        fusion_img_array=fusion_img.reshape(32,32)
+        plt.imshow(fusion_img_array, cmap='gray')
+        plt.show()
+
+        fusion_img_array_re=np.asarray(fusion_img_array, dtype=np.float16)
+        save_path='C:/Users/K.ABE/Documents/Visicoil/training_data_1027/合成画像/モデルC/SynthoticImage_'+str(i).zfill(4)+'.dcm'
+        save_dcm_image(fusion_img_array_re,ref_dcm,save_path)
+    print("save ok")
