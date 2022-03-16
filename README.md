@@ -5,28 +5,17 @@
 　Training of CNN models and implementation of image recognition using Deep Learning
 
 # DEMO
-<img width="808" alt="image" src="https://user-images.githubusercontent.com/101300902/158397271-35438291-1b37-4077-98a8-6cd8ebe58163.png">
-
-
+<img width="938" alt="スクリーンショット 2022-03-16 17 44 50" src="https://user-images.githubusercontent.com/101300902/158551374-ddd67c01-b17c-4141-b316-0182459f62c7.png">
 
 # Features
 
-"hoge"のセールスポイントや差別化などを説明する
+These programs can track objects whose shape is deformed by distance or angles.
+It is effective for composing X-ray fluoroscopic images.
 
 # Requirement
 
 * python 3.7
 * chainer 7.7.0
-
-# Usage
-
-DEMOの実行方法など、"hoge"の基本的な使い方を説明する
-
-```bash
-git clone https://github.com/hoge/~
-cd examples
-python demo.py
-```
 
 # Note
 
@@ -35,5 +24,4 @@ I don't test environments under Mac.
 # Author
 
 * Kazuki Abe
-* 
-* kazuki_don0810@yahoo.co.jp
+* R&D Center
