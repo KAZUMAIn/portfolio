@@ -3,6 +3,7 @@
 　Training of CNN models and implementation of image recognition using Deep Learning
 
 **#DEMO**
+
 <img width="808" alt="スクリーンショット 2022-03-15 23 14 20" src="https://user-images.githubusercontent.com/101300902/158708986-e4d40301-74d8-4026-b9ff-5bc670dbb2bf.png">
 
 **Features**
