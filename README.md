@@ -3,7 +3,7 @@
 　Motion tracking using CNN model
 　Training of CNN models and implementation of image recognition using Deep Learning
 
-#**#DEMO**
+#**DEMO**
 
 <img width="938" alt="スクリーンショット 2022-03-16 17 44 50" src="https://user-images.githubusercontent.com/101300902/158709239-4580daa1-b9a1-456c-95a1-332b8eb35c4a.png">
 
